@@ -1,0 +1,158 @@
+services:
+    react-app:
+      build:
+        context: ./candall-react
+        dockerfile: dockerfile
+      ports:
+        - "8001"
+      env_file:
+        - ./candall-react/.env
+      restart: always
+      depends_on:
+        - web_backend
+      networks:
+        - web-network
+
+    nginx:
+      build: ./nginx
+      ports:
+        - "80:80"
+        - "443:443"
+      restart: always
+      depends_on:
+        - web_backend
+      networks:
+        - web-network
+    
+    web_backend:
+        build:
+          context: ./CandallBackend
+          dockerfile: dockerfile
+        ports:
+          - "8000"
+        env_file:
+          - ./CandallBackend/.env
+        restart: always
+        depends_on:
+          - postgres
+        volumes:
+          - ./CandallBackend/certs:/app/certs
+        
+        networks:
+          - postgres-network
+          - web-network
+
+    bot:
+        build: 
+          context: ./CandallGo
+          dockerfile: dockerfile
+        container_name: candall-bot
+        restart: always
+        env_file:
+          - .env
+        volumes:
+          - ./bot-data/loc.yaml:/app/loc.yaml:rw
+        depends_on:
+          - postgres
+          - vector
+        networks:
+          - postgres-network
+          - logging
+
+    postgres:
+        container_name: candall-postgres
+        image: postgres:latest
+        restart: always
+        #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+        environment:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: vladmin
+          POSTGRES_PASSWORD: vladik
+          PGDATA: /var/lib/postgresql/data
+        volumes:
+          - ./data:/var/lib/postgresql/data
+        ports:
+          - '5432:5432'
+        networks:
+          -  postgres-network
+
+    opensearch:
+        container_name: opensearch
+        image: opensearchproject/opensearch:2.12.0
+        environment:
+          - cluster.name=opensearch-cluster
+          - node.name=opensearch-node1
+          - discovery.type=single-node
+          - plugins.security.disabled=false
+          - plugins.security.ssl.transport.pemcert_filepath=cert/opensearch.pem
+          - plugins.security.ssl.transport.pemkey_filepath=cert/opensearch-key.pem
+          - plugins.security.ssl.transport.pemtrustedcas_filepath=cert/root-ca.pem
+          - plugins.security.ssl.http.enabled=true
+          - plugins.security.ssl.http.pemcert_filepath=cert/opensearch.pem
+          - plugins.security.ssl.http.pemkey_filepath=cert/opensearch-key.pem
+          - plugins.security.ssl.http.pemtrustedcas_filepath=cert/root-ca.pem
+          - plugins.security.allow_default_init_securityindex=true
+          
+          - OPENSEARCH_INITIAL_ADMIN_PASSWORD=StrongPassword123!
+          - bootstrap.memory_lock=true
+          - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+        restart: always
+        ulimits:
+          memlock:
+            soft: -1
+            hard: -1
+        volumes:
+          - ./cert/opensearch.pem:/usr/share/opensearch/config/cert/opensearch.pem:ro
+          - ./cert/opensearch-key.pem:/usr/share/opensearch/config/cert/opensearch-key.pem:ro
+          - ./cert/root-ca.pem:/usr/share/opensearch/config/cert/root-ca.pem:ro
+          - opensearch-data:/usr/share/opensearch/data
+        ports:
+          - "127.0.0.1:9200:9200"
+        networks:
+          - logging
+
+    dashboards:
+      image: opensearchproject/opensearch-dashboards:2.12.0
+      ports:
+        - "5601"
+      environment:
+        - OPENSEARCH_HOSTS=["https://opensearch:9200"]
+        - SERVER_SSL_ENABLED=true
+        - SERVER_SSL_CERTIFICATE=/usr/share/opensearch-dashboards/config/cert/dashboards.pem
+        - SERVER_SSL_KEY=/usr/share/opensearch-dashboards/config/cert/dashboards-key.pem
+        - OPENSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/opensearch-dashboards/config/cert/root-ca.pem
+        - OPENSEARCH_SSL_VERIFICATIONMODE=full
+        - DISABLE_SECURITY_DASHBOARDS_PLUGIN=false
+      restart: always
+      depends_on:
+        - opensearch
+      container_name: dashboard
+      volumes:
+        - ./cert:/usr/share/opensearch-dashboards/config/cert:ro
+      networks:
+        - logging
+        - web-network
+    vector:
+      container_name: vector
+      image: timberio/vector:0.41.0-alpine
+      environment:
+        - VECTOR_LOG=debug
+      volumes:
+        - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+        - ./cert/root-ca.pem:/etc/vector/root-ca.pem:ro
+      restart: always
+      depends_on:
+        - opensearch
+      networks:
+        - logging
+
+volumes:
+  opensearch-data:
+
+networks:
+  logging:
+    driver: bridge
+  postgres-network:
+    driver: bridge
+  web-network:
+    driver: bridge

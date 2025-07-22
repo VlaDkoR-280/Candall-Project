@@ -1,0 +1,36 @@
+sources:
+  logs:
+    type: socket
+    mode: tcp
+    address: "0.0.0.0:9000"
+    decoding:
+      codec: json
+
+transforms:
+  parse:
+    type: remap
+    inputs: [logs]
+    source: |
+      .@timestamp = to_string(now())
+
+sinks:
+  opensearch:
+    type: elasticsearch
+    inputs: [parse]
+    endpoints: ["https://opensearch:9200"]
+    api_version: "v8"
+    mode: data_stream
+    data_stream:
+      type: logs
+      dataset: bot-logs
+      namespace: default
+    auth:
+      strategy: "basic"
+      user: "admin"
+      password: "StrongPassword123!"
+    tls:
+      verify_certificate: true
+      verify_hostname: true
+      ca_file: "/etc/vector/root-ca.pem"
+    healthcheck:
+      enabled: true

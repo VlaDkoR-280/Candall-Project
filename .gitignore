@@ -1,0 +1,98 @@
+# === Node ===
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Python/Django/FastAPI Backend ===
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.env
+.env.*
+.venv/
+env/
+venv/
+
+# === Go ===
+*.exe
+*.out
+*.test
+*.mod
+*.sum
+/go.sum
+/go.mod
+/vendor/
+
+# === React Build ===
+build/
+dist/
+
+# === Docker ===
+*.pid
+*.pid.lock
+docker-compose.override.yml
+**/.docker/
+
+# === Nginx / Certs ===
+cert/
+certs/
+ssl/
+*.pem
+*.key
+*.crt
+*.csr
+*.pub
+
+# === OS / Editor files ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# === Logs ===
+logs/
+*.log
+*.log.*
+
+# === System / temp ===
+tmp/
+temp/
+.cache/
+*.bak
+*.orig
+
+# === Git ===
+*.orig
+*.rej
+*.patch
+*.un~
+*.merge_backup
+
+# === Vector config/cache ===
+vector/data/
+vector/.cache/
+
+# === Opensearch data ===
+opensearch-data/
+
+# === Docker volumes (if bind-mounted) ===
+postgres-data/
+redis-data/
+
+# === Misc ===
+coverage/
+htmlcov/
+*.coverage
+.tox/
+*.egg-info/
+.eggs/
+
+# === Project-specific ===
+.env.local
+.env.production
+.env.development
+.env.test
+.env.docker
