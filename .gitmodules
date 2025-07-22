@@ -1,0 +1,9 @@
+[submodule "candall-react"]
+	path = candall-react
+	url = git@github.com:VlaDkoR-280/candall-react.git
+[submodule "CandallGo"]
+	path = CandallGo
+	url = git@github.com:VlaDkoR-280/CandallGo.git
+[submodule "CandallBackend"]
+	path = CandallBackend
+	url = git@github.com:VlaDkoR-280/CandallBackend.git
